@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Positive Financial</string>
+
+    <string name="notification_channel_daily_id">daily_reminder_channel</string>
+    <string name="notification_channel_daily_name">Daily Reminder</string>
+    <string name="notification_channel_daily_desc">Reminds you every day to record your income and expenses</string>
+
+    <string name="notification_channel_card_id">credit_card_reminder_channel</string>
+    <string name="notification_channel_card_name">Credit Card Payment Reminders</string>
+    <string name="notification_channel_card_desc">Reminds you when a credit card payment is coming up</string>
+
+    <string name="daily_reminder_title">Time to check in on your money</string>
+    <string name="daily_reminder_body">Take 30 seconds to record today\'s income and expenses.</string>
+
+    <string name="card_reminder_title">Credit card payment reminder</string>
+    <string name="card_reminder_body">Your %1$s payment is coming up. Don\'t miss the due date.</string>
+</resources>
