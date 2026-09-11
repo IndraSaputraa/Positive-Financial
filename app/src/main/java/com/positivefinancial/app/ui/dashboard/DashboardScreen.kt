@@ -51,6 +51,7 @@ import com.positivefinancial.app.ui.components.EmptyState
 import com.positivefinancial.app.ui.components.IconBadge
 import com.positivefinancial.app.ui.components.MonthlyBarChart
 import com.positivefinancial.app.ui.components.MonthlyBarData
+import com.positivefinancial.app.ui.components.MonthSelector
 import com.positivefinancial.app.ui.components.SectionHeader
 import com.positivefinancial.app.ui.components.TransactionRow
 import com.positivefinancial.app.ui.components.parseHexColor
@@ -82,6 +83,15 @@ fun DashboardScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+
+        item {
+            MonthSelector(
+                month = state.selectedMonth,
+                onPrevious = viewModel::onPreviousMonth,
+                onNext = viewModel::onNextMonth,
+                nextEnabled = !state.isCurrentMonth
+            )
         }
 
         item { BalanceHeroCard(state.totalBalance, state.monthlyIncome, state.monthlyExpense) }
@@ -210,8 +220,8 @@ private fun BalanceHeroCard(totalBalance: Long, income: Long, expense: Long) {
             )
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                MiniStat(label = "Income (this month)", value = income, color = Color.White)
-                MiniStat(label = "Expenses (this month)", value = expense, color = Color.White)
+                MiniStat(label = "Income", value = income, color = Color.White)
+                MiniStat(label = "Expenses", value = expense, color = Color.White)
             }
         }
     }
@@ -232,7 +242,7 @@ private fun SavingsProgressCard(income: Long, expense: Long) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Savings this month", style = MaterialTheme.typography.titleMedium)
+                Text("Savings", style = MaterialTheme.typography.titleMedium)
                 Text(
                     Formatters.currencySigned(net),
                     color = if (net >= 0) IncomeGreen else ExpenseRed,

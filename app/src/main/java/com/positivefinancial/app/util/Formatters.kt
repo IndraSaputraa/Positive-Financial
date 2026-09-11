@@ -45,6 +45,8 @@ object Formatters {
         }
     }
 
+    fun monthYear(month: YearMonth): String = month.atDay(1).format(monthYearFormatter)
+
     fun monthYearFromKey(yearMonth: String): String =
         runCatching { YearMonth.parse(yearMonth).atDay(1).format(monthYearFormatter) }.getOrDefault(yearMonth)
 

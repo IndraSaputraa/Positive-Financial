@@ -36,6 +36,7 @@ import com.positivefinancial.app.ui.creditcards.AddEditCreditCardScreen
 import com.positivefinancial.app.ui.creditcards.CreditCardDetailScreen
 import com.positivefinancial.app.ui.creditcards.CreditCardsScreen
 import com.positivefinancial.app.ui.dashboard.DashboardScreen
+import com.positivefinancial.app.ui.export.ExportScreen
 import com.positivefinancial.app.ui.settings.SettingsScreen
 import com.positivefinancial.app.ui.transactions.AddEditTransactionScreen
 import com.positivefinancial.app.ui.transactions.TransactionListScreen
@@ -128,7 +129,11 @@ fun PositiveFinancialApp() {
             }
 
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(onExportClick = { navController.navigate(Screen.Export.route) })
+            }
+
+            composable(Screen.Export.route) {
+                ExportScreen(onBack = { navController.popBackStack() })
             }
 
             composable(

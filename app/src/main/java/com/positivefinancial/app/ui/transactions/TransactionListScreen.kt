@@ -21,12 +21,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,8 +37,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.positivefinancial.app.data.local.dao.TransactionWithDetails
 import com.positivefinancial.app.data.model.TransactionType
 import com.positivefinancial.app.ui.components.EmptyState
+import com.positivefinancial.app.ui.components.MonthSelector
 import com.positivefinancial.app.ui.components.TransactionRow
 import com.positivefinancial.app.util.Formatters
+import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +63,32 @@ fun TransactionListScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val month = state.selectedMonth
+                    if (month != null) {
+                        MonthSelector(
+                            month = month,
+                            onPrevious = viewModel::onPreviousMonth,
+                            onNext = viewModel::onNextMonth,
+                            nextEnabled = month != YearMonth.now(),
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        Text(
+                            text = "All time",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    TextButton(onClick = viewModel::onToggleAllTime) {
+                        Text(if (state.selectedMonth == null) "By month" else "All time")
+                    }
+                }
+
                 OutlinedTextField(
                     value = state.query,
                     onValueChange = viewModel::onQueryChange,

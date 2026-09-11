@@ -9,10 +9,11 @@ import kotlin.math.min
 
 object DateRanges {
 
-    fun currentMonthRange(): Pair<Long, Long> {
-        val now = YearMonth.now()
-        val start = now.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val end = LocalDateTime.of(now.atEndOfMonth(), LocalTime.of(23, 59, 59))
+    fun currentMonthRange(): Pair<Long, Long> = monthRange(YearMonth.now())
+
+    fun monthRange(month: YearMonth): Pair<Long, Long> {
+        val start = month.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val end = LocalDateTime.of(month.atEndOfMonth(), LocalTime.of(23, 59, 59))
             .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         return start to end
     }

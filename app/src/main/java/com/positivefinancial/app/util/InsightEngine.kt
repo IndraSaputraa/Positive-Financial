@@ -31,35 +31,37 @@ object InsightEngine {
     fun generate(
         totalIncome: Long,
         totalExpense: Long,
-        topExpenseCategory: CategorySpendingRow?
+        topExpenseCategory: CategorySpendingRow?,
+        isCurrentPeriod: Boolean = true
     ): List<String> {
         val insights = mutableListOf<String>()
         val net = totalIncome - totalExpense
+        val periodWord = if (isCurrentPeriod) "this month" else "that month"
 
         insights += when {
             totalIncome == 0L && totalExpense == 0L ->
-                "No transactions recorded yet this month. Add your first one to see insights here."
+                "No transactions recorded for $periodWord. Add one to see insights here."
             else -> {
                 val incomeText = Formatters.currency(totalIncome)
                 val expenseText = Formatters.currency(totalExpense)
-                "This month you earned $incomeText and spent $expenseText."
+                "In $periodWord you earned $incomeText and spent $expenseText."
             }
         }
 
         if (topExpenseCategory != null && topExpenseCategory.total > 0 && totalExpense > 0) {
             val share = (topExpenseCategory.total * 100.0 / totalExpense).let { "%.0f".format(it) }
             val name = topExpenseCategory.categoryName ?: "Uncategorized"
-            insights += "Your biggest expense was $name at ${Formatters.currency(topExpenseCategory.total)} ($share% of spending)."
+            insights += "The biggest expense was $name at ${Formatters.currency(topExpenseCategory.total)} ($share% of spending)."
             categoryTips[name]?.let { insights += it }
         }
 
         if (totalIncome > 0) {
             val savingsRate = (net * 100.0 / totalIncome)
             insights += when {
-                net < 0 -> "You're spending more than you earn this month — worth a closer look at your biggest categories."
-                savingsRate < 10 -> "You're saving about ${"%.0f".format(savingsRate)}% of your income. Aiming for 20% builds a stronger safety net."
-                savingsRate < 20 -> "You're saving about ${"%.0f".format(savingsRate)}% of your income — solid progress toward the 20% mark."
-                else -> "Great job! You saved about ${"%.0f".format(savingsRate)}% of your income this month."
+                net < 0 -> "Spending was higher than income in $periodWord — worth a closer look at the biggest categories."
+                savingsRate < 10 -> "About ${"%.0f".format(savingsRate)}% of income was saved. Aiming for 20% builds a stronger safety net."
+                savingsRate < 20 -> "About ${"%.0f".format(savingsRate)}% of income was saved — solid progress toward the 20% mark."
+                else -> "Great job! About ${"%.0f".format(savingsRate)}% of income was saved in $periodWord."
             }
         }
 
