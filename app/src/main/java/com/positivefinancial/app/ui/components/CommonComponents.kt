@@ -25,6 +25,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,8 +58,6 @@ fun IconBadge(
         Icon(imageVector = IconMapper.resolve(iconKey), contentDescription = null, tint = color)
     }
 }
-
-private fun Modifier.clip(shape: androidx.compose.ui.graphics.Shape) = this.then(androidx.compose.ui.draw.clip(shape))
 
 @Composable
 fun SectionHeader(
