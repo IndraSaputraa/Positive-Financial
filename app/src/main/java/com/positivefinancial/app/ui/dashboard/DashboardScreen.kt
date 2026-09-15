@@ -49,6 +49,8 @@ import com.positivefinancial.app.ui.components.DonutChart
 import com.positivefinancial.app.ui.components.DonutSlice
 import com.positivefinancial.app.ui.components.EmptyState
 import com.positivefinancial.app.ui.components.IconBadge
+import com.positivefinancial.app.ui.components.LineChart
+import com.positivefinancial.app.ui.components.LineChartPoint
 import com.positivefinancial.app.ui.components.MonthlyBarChart
 import com.positivefinancial.app.ui.components.MonthlyBarData
 import com.positivefinancial.app.ui.components.MonthSelector
@@ -198,6 +200,34 @@ fun DashboardScreen(
                             },
                             modifier = Modifier.padding(16.dp)
                         )
+                    }
+                }
+            }
+        }
+
+        if (state.netWorthTrend.size > 1) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SectionHeader(title = "Net Worth Trend")
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            val change = state.netWorthTrend.last().netWorth - state.netWorthTrend.first().netWorth
+                            Text(
+                                text = Formatters.currency(state.netWorthTrend.last().netWorth),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${if (change >= 0) "+" else ""}${Formatters.currency(change)} over ${state.netWorthTrend.size} months",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (change >= 0) IncomeGreen else ExpenseRed
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LineChart(
+                                data = state.netWorthTrend.map { LineChartPoint(it.label, it.netWorth.toFloat()) },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }

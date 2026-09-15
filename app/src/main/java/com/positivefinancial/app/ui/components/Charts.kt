@@ -23,8 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -118,6 +121,66 @@ fun MonthlyBarChart(
                     modifier = Modifier.padding(top = 6.dp)
                 )
             }
+        }
+    }
+}
+
+data class LineChartPoint(val label: String, val value: Float)
+
+/**
+ * Simple line + gradient-fill chart drawn with Canvas so the app has zero
+ * charting dependency. Assumes at least 2 points; caller gates on that.
+ */
+@Composable
+fun LineChart(
+    data: List<LineChartPoint>,
+    modifier: Modifier = Modifier,
+    lineColor: Color = MaterialTheme.colorScheme.primary
+) {
+    val minValue = data.minOf { it.value }
+    val maxValue = data.maxOf { it.value }
+    val range = (maxValue - minValue).let { if (it <= 0f) 1f else it }
+
+    Column(modifier = modifier) {
+        Canvas(modifier = Modifier.fillMaxWidth().height(140.dp)) {
+            val stepX = if (data.size > 1) size.width / (data.size - 1) else 0f
+            val topInset = 8.dp.toPx()
+            val bottomInset = 8.dp.toPx()
+            val drawableHeight = size.height - topInset - bottomInset
+            val points = data.mapIndexed { index, point ->
+                val x = index * stepX
+                val y = topInset + drawableHeight - ((point.value - minValue) / range) * drawableHeight
+                Offset(x, y)
+            }
+
+            val fillPath = Path().apply {
+                moveTo(points.first().x, size.height)
+                points.forEach { lineTo(it.x, it.y) }
+                lineTo(points.last().x, size.height)
+                close()
+            }
+            drawPath(
+                path = fillPath,
+                brush = Brush.verticalGradient(listOf(lineColor.copy(alpha = 0.25f), Color.Transparent))
+            )
+
+            val linePath = Path().apply {
+                moveTo(points.first().x, points.first().y)
+                points.drop(1).forEach { lineTo(it.x, it.y) }
+            }
+            drawPath(
+                path = linePath,
+                color = lineColor,
+                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            )
+
+            points.forEach { point ->
+                drawCircle(color = lineColor, radius = 4.dp.toPx(), center = point)
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(data.first().label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(data.last().label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

@@ -16,6 +16,7 @@ import com.positivefinancial.app.data.repository.CategoryRepository
 import com.positivefinancial.app.data.repository.GoalRepository
 import com.positivefinancial.app.data.repository.TransactionRepository
 import com.positivefinancial.app.util.DateRanges
+import com.positivefinancial.app.util.Formatters
 import com.positivefinancial.app.util.InsightEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -41,6 +42,11 @@ data class BudgetAlert(
     val isOverBudget: Boolean get() = spent > limit
 }
 
+data class NetWorthPoint(
+    val label: String,
+    val netWorth: Long
+)
+
 data class GoalSummary(
     val name: String,
     val iconKey: String,
@@ -64,6 +70,7 @@ data class DashboardUiState(
     val goals: List<GoalSummary> = emptyList(),
     val recentTransactions: List<TransactionWithDetails> = emptyList(),
     val monthlySummary: List<MonthlySummaryRow> = emptyList(),
+    val netWorthTrend: List<NetWorthPoint> = emptyList(),
     val insights: List<String> = emptyList(),
     val isLoading: Boolean = true
 )
@@ -135,6 +142,7 @@ class DashboardViewModel @Inject constructor(
             goals = goals,
             recentTransactions = monthData.recent,
             monthlySummary = monthly,
+            netWorthTrend = netWorthTrendFrom(monthly, monthData.totals.totalBalance),
             insights = InsightEngine.generate(
                 monthData.totals.income,
                 monthData.totals.expense,
@@ -164,6 +172,22 @@ class DashboardViewModel @Inject constructor(
         return combine(totals, recent, budgetRepository.observeAll()) { t, r, budgets ->
             MonthData(month, t, r, budgets)
         }
+    }
+
+    /**
+     * Reconstructs net worth at the end of each recent month by walking backward
+     * from the current total balance: transfers net to zero across all accounts,
+     * so undoing each month's recorded income (subtract) and expense (add back)
+     * recovers the total balance as it stood before that month's activity.
+     */
+    private fun netWorthTrendFrom(monthly: List<MonthlySummaryRow>, currentTotal: Long): List<NetWorthPoint> {
+        var runningNetWorth = currentTotal
+        val points = ArrayDeque<NetWorthPoint>()
+        for (row in monthly.asReversed()) {
+            points.addFirst(NetWorthPoint(Formatters.monthYearShort(row.yearMonth), runningNetWorth))
+            runningNetWorth = runningNetWorth - row.income + row.expense
+        }
+        return points.toList()
     }
 
     private fun budgetAlertsFrom(
