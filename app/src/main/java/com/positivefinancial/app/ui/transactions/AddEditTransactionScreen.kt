@@ -2,7 +2,6 @@ package com.positivefinancial.app.ui.transactions
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,8 +18,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -34,7 +31,6 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.positivefinancial.app.data.model.TransactionType
+import com.positivefinancial.app.ui.components.AppDatePickerDialog
 import com.positivefinancial.app.ui.components.ConfirmDialog
 import com.positivefinancial.app.ui.components.IconBadge
 import com.positivefinancial.app.util.Formatters
@@ -111,6 +108,17 @@ fun AddEditTransactionScreen(
                 ) { Text("Income") }
             }
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Date", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                TextButton(onClick = { showDatePicker = true }) {
+                    Icon(Icons.Filled.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text(" " + Formatters.date(state.date))
+                }
+            }
+
             Column {
                 OutlinedTextField(
                     value = state.amountText,
@@ -158,17 +166,6 @@ fun AddEditTransactionScreen(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Date", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                TextButton(onClick = { showDatePicker = true }) {
-                    Icon(Icons.Filled.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text(" " + Formatters.date(state.date))
-                }
-            }
-
             OutlinedTextField(
                 value = state.note,
                 onValueChange = viewModel::onNoteChange,
@@ -189,21 +186,11 @@ fun AddEditTransactionScreen(
     }
 
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = state.date)
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { viewModel.onDateChange(it) }
-                    showDatePicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+        AppDatePickerDialog(
+            initialDateMillis = state.date,
+            onDismiss = { showDatePicker = false },
+            onConfirm = viewModel::onDateChange
+        )
     }
 
     if (showDeleteConfirm) {

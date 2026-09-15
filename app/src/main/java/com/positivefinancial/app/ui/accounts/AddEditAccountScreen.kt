@@ -90,7 +90,7 @@ fun AddEditAccountScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Account type", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        val types = listOf(AccountType.CASH, AccountType.BANK, AccountType.E_WALLET)
+                        val types = listOf(AccountType.CASH, AccountType.BANK, AccountType.E_WALLET, AccountType.INVESTMENT)
                         types.forEachIndexed { index, type ->
                             SegmentedButton(
                                 selected = state.type == type,
@@ -102,6 +102,7 @@ fun AddEditAccountScreen(
                                         AccountType.CASH -> "Cash"
                                         AccountType.BANK -> "Bank"
                                         AccountType.E_WALLET -> "E-Wallet"
+                                        AccountType.INVESTMENT -> "Investment"
                                         AccountType.CREDIT_CARD -> "Card"
                                     }
                                 )

@@ -79,7 +79,11 @@ class ExportViewModel @Inject constructor(
             try {
                 val month = _selectedMonth.value
                 val (start, end) = month?.let { DateRanges.monthRange(it) } ?: (null to null)
-                val transactions = transactionRepository.observeFiltered(startDate = start, endDate = end).first()
+                // Newest-first is right for in-app browsing, but a report reads better
+                // chronologically: oldest transaction first, most recent last.
+                val transactions = transactionRepository.observeFiltered(startDate = start, endDate = end)
+                    .first()
+                    .sortedBy { it.date }
                 val title = month?.let { Formatters.monthYear(it) } ?: "All Time"
                 val fileLabel = month?.toString() ?: "all_time"
                 val extension = if (isPdf) "pdf" else "csv"

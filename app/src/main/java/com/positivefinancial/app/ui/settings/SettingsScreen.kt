@@ -1,5 +1,10 @@
 package com.positivefinancial.app.ui.settings
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings as AndroidSettings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Fingerprint
@@ -24,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,12 +38,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.positivefinancial.app.ui.biometric.BiometricAuthManager
 import com.positivefinancial.app.ui.components.AppTimePickerDialog
+
+private fun isIgnoringBatteryOptimizations(context: Context): Boolean {
+    val powerManager = ContextCompat.getSystemService(context, PowerManager::class.java)
+    return powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +65,18 @@ fun SettingsScreen(
     val biometricAuthManager = remember { BiometricAuthManager() }
     val biometricAvailable = remember { biometricAuthManager.isAvailable(context) }
     var showTimePicker by remember { mutableStateOf(false) }
+
+    var batteryUnrestricted by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                batteryUnrestricted = isIgnoringBatteryOptimizations(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Settings") }) }) { padding ->
         Column(
@@ -102,6 +130,23 @@ fun SettingsScreen(
                             TextButton(onClick = { showTimePicker = true }) {
                                 Text("%02d:%02d".format(settings.dailyReminderHour, settings.dailyReminderMinute))
                             }
+                        }
+                    }
+
+                    if (!batteryUnrestricted) {
+                        SettingRow(
+                            icon = Icons.Filled.BatteryAlert,
+                            title = "Reminders may be delayed",
+                            subtitle = "Your phone's battery saver can stop reminders when the app isn't open. " +
+                                "Allow unrestricted battery use for reliable delivery."
+                        ) {
+                            TextButton(onClick = {
+                                val intent = Intent(
+                                    AndroidSettings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                    Uri.parse("package:${context.packageName}")
+                                )
+                                context.startActivity(intent)
+                            }) { Text("Allow") }
                         }
                     }
                 }

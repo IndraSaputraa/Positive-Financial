@@ -21,6 +21,7 @@ fun iconKeyForAccountType(type: AccountType): String = when (type) {
     AccountType.CASH -> "payments"
     AccountType.BANK -> "account_balance"
     AccountType.E_WALLET -> "account_balance_wallet"
+    AccountType.INVESTMENT -> "trending_up"
     AccountType.CREDIT_CARD -> "credit_card"
 }
 

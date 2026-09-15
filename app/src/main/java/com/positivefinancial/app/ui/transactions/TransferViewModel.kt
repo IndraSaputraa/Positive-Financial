@@ -63,6 +63,10 @@ class TransferViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(note = note)
     }
 
+    fun onDateChange(millis: Long) {
+        _uiState.value = _uiState.value.copy(date = millis)
+    }
+
     fun save() {
         val state = _uiState.value
         if (!state.isSaveEnabled) return
