@@ -6,6 +6,10 @@ import android.os.Environment
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.positivefinancial.app.data.local.entity.AccountEntity
+import com.positivefinancial.app.data.local.entity.CategoryEntity
+import com.positivefinancial.app.data.repository.AccountRepository
+import com.positivefinancial.app.data.repository.CategoryRepository
 import com.positivefinancial.app.data.repository.TransactionRepository
 import com.positivefinancial.app.util.DateRanges
 import com.positivefinancial.app.util.Formatters
@@ -13,6 +17,7 @@ import com.positivefinancial.app.util.export.CsvExporter
 import com.positivefinancial.app.util.export.PdfExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -20,9 +25,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
@@ -34,24 +39,63 @@ sealed class ExportEvent {
     data class Error(val message: String) : ExportEvent()
 }
 
+data class ExportFilterState(
+    val accountId: Long? = null,
+    val categoryId: Long? = null,
+    val accounts: List<AccountEntity> = emptyList(),
+    val categories: List<CategoryEntity> = emptyList(),
+    val transactionCount: Int = 0
+) {
+    val activeFilterCount: Int get() = listOfNotNull(accountId, categoryId).size
+    val accountName: String? get() = accounts.firstOrNull { it.id == accountId }?.name
+    val categoryName: String? get() = categories.firstOrNull { it.id == categoryId }?.name
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ExportViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
+    accountRepository: AccountRepository,
+    categoryRepository: CategoryRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _selectedMonth = MutableStateFlow<YearMonth?>(YearMonth.now())
     val selectedMonth: StateFlow<YearMonth?> = _selectedMonth.asStateFlow()
 
+    private val _accountId = MutableStateFlow<Long?>(null)
+    private val _categoryId = MutableStateFlow<Long?>(null)
+
     private val _isExporting = MutableStateFlow(false)
     val isExporting: StateFlow<Boolean> = _isExporting.asStateFlow()
 
-    val transactionCount: StateFlow<Int> = _selectedMonth
-        .flatMapLatest { month ->
-            val (start, end) = month?.let { DateRanges.monthRange(it) } ?: (null to null)
-            transactionRepository.observeFiltered(startDate = start, endDate = end).map { it.size }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    private val filteredCount = combine(_selectedMonth, _accountId, _categoryId) { month, accountId, categoryId ->
+        Triple(month, accountId, categoryId)
+    }.flatMapLatest { (month, accountId, categoryId) ->
+        val (start, end) = month?.let { DateRanges.monthRange(it) } ?: (null to null)
+        transactionRepository.observeFiltered(
+            accountId = accountId,
+            categoryId = categoryId,
+            startDate = start,
+            endDate = end
+        )
+    }
+
+    val filterState: StateFlow<ExportFilterState> = combine(
+        _accountId,
+        _categoryId,
+        accountRepository.observeAccounts(),
+        categoryRepository.observeAll(),
+        filteredCount
+    ) { accountId, categoryId, accounts, categories, transactions ->
+        ExportFilterState(
+            accountId = accountId,
+            categoryId = categoryId,
+            accounts = accounts,
+            categories = categories,
+            transactionCount = transactions.size
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ExportFilterState())
 
     private val _events = MutableSharedFlow<ExportEvent>()
     val events: SharedFlow<ExportEvent> = _events.asSharedFlow()
@@ -68,6 +112,19 @@ class ExportViewModel @Inject constructor(
         _selectedMonth.value = if (_selectedMonth.value == null) YearMonth.now() else null
     }
 
+    fun onAccountFilterChange(accountId: Long?) {
+        _accountId.value = accountId
+    }
+
+    fun onCategoryFilterChange(categoryId: Long?) {
+        _categoryId.value = categoryId
+    }
+
+    fun onClearFilters() {
+        _accountId.value = null
+        _categoryId.value = null
+    }
+
     fun exportCsv() = export(isPdf = false)
 
     fun exportPdf() = export(isPdf = true)
@@ -79,13 +136,24 @@ class ExportViewModel @Inject constructor(
             try {
                 val month = _selectedMonth.value
                 val (start, end) = month?.let { DateRanges.monthRange(it) } ?: (null to null)
+                val accountId = _accountId.value
+                val categoryId = _categoryId.value
                 // Newest-first is right for in-app browsing, but a report reads better
                 // chronologically: oldest transaction first, most recent last.
-                val transactions = transactionRepository.observeFiltered(startDate = start, endDate = end)
+                val transactions = transactionRepository.observeFiltered(
+                    accountId = accountId,
+                    categoryId = categoryId,
+                    startDate = start,
+                    endDate = end
+                )
                     .first()
                     .sortedBy { it.date }
                 val title = month?.let { Formatters.monthYear(it) } ?: "All Time"
-                val fileLabel = month?.toString() ?: "all_time"
+                val fileLabel = buildList {
+                    add(month?.toString() ?: "all_time")
+                    filterState.value.accountName?.let { add(it.replace(" ", "_")) }
+                    filterState.value.categoryName?.let { add(it.replace(" ", "_")) }
+                }.joinToString("_")
                 val extension = if (isPdf) "pdf" else "csv"
 
                 val downloadsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)

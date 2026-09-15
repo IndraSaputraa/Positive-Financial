@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,7 +33,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.positivefinancial.app.ui.components.MonthSelector
+import com.positivefinancial.app.ui.transactions.TransactionFilterDialog
 import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,9 +55,10 @@ fun ExportScreen(
 ) {
     val selectedMonth by viewModel.selectedMonth.collectAsStateWithLifecycle()
     val isExporting by viewModel.isExporting.collectAsStateWithLifecycle()
-    val transactionCount by viewModel.transactionCount.collectAsStateWithLifecycle()
+    val filterState by viewModel.filterState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    var showFilterDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -120,10 +127,38 @@ fun ExportScreen(
                         TextButton(onClick = viewModel::onToggleAllTime) {
                             Text(if (selectedMonth == null) "By month" else "All time")
                         }
+                        BadgedBox(
+                            badge = {
+                                if (filterState.activeFilterCount > 0) {
+                                    Badge { Text("${filterState.activeFilterCount}") }
+                                }
+                            }
+                        ) {
+                            IconButton(onClick = { showFilterDialog = true }) {
+                                Icon(Icons.Filled.FilterList, contentDescription = "Filter by account or category")
+                            }
+                        }
+                    }
+                    if (filterState.activeFilterCount > 0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = listOfNotNull(
+                                    filterState.accountName?.let { "Account: $it" },
+                                    filterState.categoryName?.let { "Category: $it" }
+                                ).joinToString(" · "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            TextButton(onClick = viewModel::onClearFilters) { Text("Clear") }
+                        }
                     }
                     Text(
-                        if (transactionCount == 0) "No transactions in this period"
-                        else "$transactionCount transaction${if (transactionCount == 1) "" else "s"} will be exported",
+                        if (filterState.transactionCount == 0) "No transactions match these filters"
+                        else "${filterState.transactionCount} transaction${if (filterState.transactionCount == 1) "" else "s"} will be exported",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -132,7 +167,7 @@ fun ExportScreen(
 
             Button(
                 onClick = viewModel::exportCsv,
-                enabled = !isExporting && transactionCount > 0,
+                enabled = !isExporting && filterState.transactionCount > 0,
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
                 Icon(Icons.Filled.TableChart, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -141,7 +176,7 @@ fun ExportScreen(
 
             Button(
                 onClick = viewModel::exportPdf,
-                enabled = !isExporting && transactionCount > 0,
+                enabled = !isExporting && filterState.transactionCount > 0,
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
                 Icon(Icons.Filled.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -173,5 +208,18 @@ fun ExportScreen(
                 )
             }
         }
+    }
+
+    if (showFilterDialog) {
+        TransactionFilterDialog(
+            accounts = filterState.accounts,
+            categories = filterState.categories,
+            selectedAccountId = filterState.accountId,
+            selectedCategoryId = filterState.categoryId,
+            onAccountSelect = viewModel::onAccountFilterChange,
+            onCategorySelect = viewModel::onCategoryFilterChange,
+            onClear = viewModel::onClearFilters,
+            onDismiss = { showFilterDialog = false }
+        )
     }
 }

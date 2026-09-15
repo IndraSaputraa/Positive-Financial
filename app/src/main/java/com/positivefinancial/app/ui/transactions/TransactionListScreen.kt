@@ -11,12 +11,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -53,6 +57,7 @@ fun TransactionListScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val grouped = state.transactions.groupBy { Formatters.dayLabel(it.date) }
     var transferToView by remember { mutableStateOf<TransactionWithDetails?>(null) }
+    var showFilterDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Activity") }) },
@@ -90,14 +95,47 @@ fun TransactionListScreen(
                     }
                 }
 
-                OutlinedTextField(
-                    value = state.query,
-                    onValueChange = viewModel::onQueryChange,
-                    placeholder = { Text("Search by note, account, or category") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = state.query,
+                        onValueChange = viewModel::onQueryChange,
+                        placeholder = { Text("Search by note, account, or category") },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    BadgedBox(
+                        badge = {
+                            if (state.activeFilterCount > 0) {
+                                Badge { Text("${state.activeFilterCount}") }
+                            }
+                        },
+                        modifier = Modifier.padding(start = 4.dp)
+                    ) {
+                        IconButton(onClick = { showFilterDialog = true }) {
+                            Icon(Icons.Filled.FilterList, contentDescription = "Filter by account or category")
+                        }
+                    }
+                }
+
+                if (state.activeFilterCount > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = listOfNotNull(
+                                state.accountFilterName?.let { "Account: $it" },
+                                state.categoryFilterName?.let { "Category: $it" }
+                            ).joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        TextButton(onClick = viewModel::onClearAccountCategoryFilters) { Text("Clear") }
+                    }
+                }
+
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(top = 8.dp)
@@ -162,5 +200,18 @@ fun TransactionListScreen(
 
     transferToView?.let { tx ->
         TransferDetailDialog(transaction = tx, onDismiss = { transferToView = null })
+    }
+
+    if (showFilterDialog) {
+        TransactionFilterDialog(
+            accounts = state.accounts,
+            categories = state.categories,
+            selectedAccountId = state.accountFilterId,
+            selectedCategoryId = state.categoryFilterId,
+            onAccountSelect = viewModel::onAccountFilterChange,
+            onCategorySelect = viewModel::onCategoryFilterChange,
+            onClear = viewModel::onClearAccountCategoryFilters,
+            onDismiss = { showFilterDialog = false }
+        )
     }
 }
