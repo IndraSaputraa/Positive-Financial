@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.positivefinancial.app.data.local.AppDatabase
 import com.positivefinancial.app.data.local.MIGRATION_1_2
+import com.positivefinancial.app.data.local.MIGRATION_2_3
 import com.positivefinancial.app.data.local.dao.AccountDao
 import com.positivefinancial.app.data.local.dao.BudgetDao
 import com.positivefinancial.app.data.local.dao.CategoryDao
@@ -26,7 +27,7 @@ object DatabaseModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
     @Provides

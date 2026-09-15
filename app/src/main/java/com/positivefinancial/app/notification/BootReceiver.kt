@@ -45,6 +45,8 @@ class BootReceiver : BroadcastReceiver() {
                         )
                     }
                 }
+
+                alarmScheduler.scheduleRecurringProcessor()
             } finally {
                 pendingResult.finish()
             }

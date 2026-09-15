@@ -7,6 +7,7 @@ import com.positivefinancial.app.data.repository.CategoryRepository
 import com.positivefinancial.app.data.settings.SettingsRepository
 import com.positivefinancial.app.notification.AlarmScheduler
 import com.positivefinancial.app.notification.NotificationHelper
+import com.positivefinancial.app.notification.RecurringItemProcessor
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,7 @@ class PositiveFinancialApp : Application() {
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var accountRepository: AccountRepository
     @Inject lateinit var categoryRepository: CategoryRepository
+    @Inject lateinit var recurringItemProcessor: RecurringItemProcessor
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -37,6 +39,9 @@ class PositiveFinancialApp : Application() {
             if (settings.dailyReminderEnabled) {
                 alarmScheduler.scheduleDaily(settings.dailyReminderHour, settings.dailyReminderMinute)
             }
+
+            alarmScheduler.scheduleRecurringProcessor()
+            recurringItemProcessor.processDueItems()
         }
     }
 

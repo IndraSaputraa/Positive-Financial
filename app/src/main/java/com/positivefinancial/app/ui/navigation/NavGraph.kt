@@ -39,6 +39,8 @@ import com.positivefinancial.app.ui.creditcards.CreditCardDetailScreen
 import com.positivefinancial.app.ui.creditcards.CreditCardsScreen
 import com.positivefinancial.app.ui.dashboard.DashboardScreen
 import com.positivefinancial.app.ui.export.ExportScreen
+import com.positivefinancial.app.ui.recurring.AddEditRecurringScreen
+import com.positivefinancial.app.ui.recurring.RecurringScreen
 import com.positivefinancial.app.ui.settings.SettingsScreen
 import com.positivefinancial.app.ui.transactions.AddEditTransactionScreen
 import com.positivefinancial.app.ui.transactions.TransactionListScreen
@@ -141,11 +143,29 @@ fun PositiveFinancialApp() {
             }
 
             composable(Screen.Settings.route) {
-                SettingsScreen(onExportClick = { navController.navigate(Screen.Export.route) })
+                SettingsScreen(
+                    onExportClick = { navController.navigate(Screen.Export.route) },
+                    onRecurringClick = { navController.navigate(Screen.Recurring.route) }
+                )
             }
 
             composable(Screen.Export.route) {
                 ExportScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.Recurring.route) {
+                RecurringScreen(
+                    onAddItem = { navController.navigate(Screen.AddEditRecurring.create()) },
+                    onEditItem = { id -> navController.navigate(Screen.AddEditRecurring.create(id)) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Screen.AddEditRecurring.route,
+                arguments = listOf(navArgument("recurringId") { type = NavType.LongType; defaultValue = -1L })
+            ) {
+                AddEditRecurringScreen(onDone = { navController.popBackStack() })
             }
 
             composable(

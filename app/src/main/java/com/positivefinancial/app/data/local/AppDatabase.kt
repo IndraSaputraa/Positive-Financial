@@ -28,7 +28,7 @@ import com.positivefinancial.app.data.local.entity.TransactionEntity
         GoalEntity::class,
         RecurringItemEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

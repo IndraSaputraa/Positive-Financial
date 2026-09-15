@@ -76,7 +76,8 @@ class RecurringItemRepository @Inject constructor(
                 autoCreateTransaction = autoCreateTransaction,
                 reminderDaysBefore = reminderDaysBefore,
                 isActive = isActive,
-                nextDueDate = DateRanges.toEpochMillis(nextDue)
+                nextDueDate = DateRanges.toEpochMillis(nextDue),
+                reminderSentAt = null
             )
         )
     }
@@ -91,8 +92,16 @@ class RecurringItemRepository @Inject constructor(
             RecurringFrequency.YEARLY -> DateRanges.nextYearlyDateAfter(item.monthOfYear, item.dayOfMonth, reference)
         }
         recurringItemDao.update(
-            item.copy(nextDueDate = DateRanges.toEpochMillis(next), lastProcessedDate = processedDate)
+            item.copy(
+                nextDueDate = DateRanges.toEpochMillis(next),
+                lastProcessedDate = processedDate,
+                reminderSentAt = null
+            )
         )
+    }
+
+    suspend fun markReminderSent(item: RecurringItemEntity, date: Long) {
+        recurringItemDao.update(item.copy(reminderSentAt = date))
     }
 
     private fun nextDueDateFor(

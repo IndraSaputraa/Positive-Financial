@@ -22,6 +22,9 @@ class AlarmScheduler @Inject constructor(
         const val EXTRA_CARD_NAME = "extra_card_name"
         private const val DAILY_REQUEST_CODE = 9000
         private const val CARD_REQUEST_CODE_BASE = 9100
+        private const val RECURRING_PROCESSOR_REQUEST_CODE = 9200
+        private const val RECURRING_PROCESSOR_HOUR = 8
+        private const val RECURRING_PROCESSOR_MINUTE = 0
     }
 
     private val alarmManager: AlarmManager
@@ -66,6 +69,16 @@ class AlarmScheduler @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.cancel(pendingIntent)
+    }
+
+    fun scheduleRecurringProcessor() {
+        val triggerAt = nextDailyTrigger(RECURRING_PROCESSOR_HOUR, RECURRING_PROCESSOR_MINUTE)
+        val intent = Intent(context, RecurringProcessorReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, RECURRING_PROCESSOR_REQUEST_CODE, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        setAlarm(triggerAt, pendingIntent)
     }
 
     private fun cardRequestCode(accountId: Long): Int = CARD_REQUEST_CODE_BASE + accountId.toInt()

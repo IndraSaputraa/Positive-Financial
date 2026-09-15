@@ -48,5 +48,6 @@ data class RecurringItemEntity(
     val isActive: Boolean = true,
     val nextDueDate: Long,
     val lastProcessedDate: Long? = null,
+    val reminderSentAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis()
 )

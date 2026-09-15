@@ -36,6 +36,12 @@ sealed class Screen(val route: String) {
 
     object Goals : Screen("goals")
 
+    object Recurring : Screen("recurring")
+
+    object AddEditRecurring : Screen("add_edit_recurring?recurringId={recurringId}") {
+        fun create(recurringId: Long = -1L) = "add_edit_recurring?recurringId=$recurringId"
+    }
+
     companion object {
         const val NEW_ID = -1L
     }

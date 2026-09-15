@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CreditCard
@@ -62,6 +63,7 @@ object IconMapper {
         "account_balance_wallet" -> Icons.Filled.AccountBalanceWallet
         "swap_horiz" -> Icons.Filled.SwapHoriz
         "receipt" -> Icons.Filled.Receipt
+        "calendar_month" -> Icons.Filled.CalendarMonth
         else -> Icons.Filled.Category
     }
 }
