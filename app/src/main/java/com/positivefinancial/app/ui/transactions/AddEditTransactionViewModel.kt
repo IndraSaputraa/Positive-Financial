@@ -8,8 +8,10 @@ import com.positivefinancial.app.data.local.entity.CategoryEntity
 import com.positivefinancial.app.data.model.CategoryType
 import com.positivefinancial.app.data.model.TransactionType
 import com.positivefinancial.app.data.repository.AccountRepository
+import com.positivefinancial.app.data.repository.BudgetRepository
 import com.positivefinancial.app.data.repository.CategoryRepository
 import com.positivefinancial.app.data.repository.TransactionRepository
+import com.positivefinancial.app.notification.NotificationHelper
 import com.positivefinancial.app.ui.navigation.Screen
 import com.positivefinancial.app.util.DateRanges
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.YearMonth
 import javax.inject.Inject
 
 data class AddEditTransactionUiState(
@@ -41,6 +44,8 @@ class AddEditTransactionViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
+    private val budgetRepository: BudgetRepository,
+    private val notificationHelper: NotificationHelper,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -130,7 +135,28 @@ class AddEditTransactionViewModel @Inject constructor(
                     date = state.date
                 )
             }
+            if (state.type == TransactionType.EXPENSE) {
+                checkBudgetExceeded(state.selectedCategoryId!!, state.date)
+            }
             _uiState.value = _uiState.value.copy(isSaved = true)
+        }
+    }
+
+    private suspend fun checkBudgetExceeded(categoryId: Long, transactionDate: Long) {
+        val budget = budgetRepository.getByCategoryId(categoryId) ?: return
+        val month = YearMonth.from(DateRanges.toLocalDate(transactionDate))
+        val (start, end) = DateRanges.monthRange(month)
+        val spent = transactionRepository.observeExpenseBreakdown(start, end).first()
+            .firstOrNull { it.categoryId == categoryId }
+            ?.total ?: 0L
+        if (spent > budget.monthlyLimit) {
+            val category = categoryRepository.getCategory(categoryId)
+            notificationHelper.showBudgetExceeded(
+                categoryId = categoryId,
+                categoryName = category?.name ?: "this category",
+                spent = spent,
+                limit = budget.monthlyLimit
+            )
         }
     }
 

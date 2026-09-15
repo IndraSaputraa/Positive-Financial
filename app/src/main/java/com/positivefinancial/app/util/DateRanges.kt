@@ -33,16 +33,50 @@ object DateRanges {
     fun now(): Long = System.currentTimeMillis()
 
     /** Next upcoming calendar date (today counts) that falls on [dayOfMonth], clamped per-month length. */
-    fun nextMonthlyDate(dayOfMonth: Int): LocalDate {
-        val today = LocalDate.now()
-        var month = YearMonth.from(today)
+    fun nextMonthlyDate(dayOfMonth: Int): LocalDate = nextMonthlyDateOnOrAfter(dayOfMonth, LocalDate.now())
+
+    /** Smallest date >= [reference] that falls on [dayOfMonth] of some month, clamped per-month length. */
+    fun nextMonthlyDateOnOrAfter(dayOfMonth: Int, reference: LocalDate): LocalDate {
+        var month = YearMonth.from(reference)
         var day = min(dayOfMonth, month.lengthOfMonth())
         var candidate = month.atDay(day)
-        if (candidate.isBefore(today)) {
+        if (candidate.isBefore(reference)) {
             month = month.plusMonths(1)
             day = min(dayOfMonth, month.lengthOfMonth())
             candidate = month.atDay(day)
         }
         return candidate
     }
+
+    /** Smallest date strictly after [reference] that falls on [dayOfMonth] of some month. */
+    fun nextMonthlyDateAfter(dayOfMonth: Int, reference: LocalDate): LocalDate =
+        nextMonthlyDateOnOrAfter(dayOfMonth, reference.plusDays(1))
+
+    /** Smallest date >= [reference] that falls on [monthOfYear]/[dayOfMonth], clamped per-month length. */
+    fun nextYearlyDateOnOrAfter(monthOfYear: Int, dayOfMonth: Int, reference: LocalDate): LocalDate {
+        var year = reference.year
+        fun candidateFor(y: Int): LocalDate {
+            val month = YearMonth.of(y, monthOfYear)
+            return month.atDay(min(dayOfMonth, month.lengthOfMonth()))
+        }
+        var candidate = candidateFor(year)
+        if (candidate.isBefore(reference)) {
+            year += 1
+            candidate = candidateFor(year)
+        }
+        return candidate
+    }
+
+    fun nextYearlyDate(monthOfYear: Int, dayOfMonth: Int): LocalDate =
+        nextYearlyDateOnOrAfter(monthOfYear, dayOfMonth, LocalDate.now())
+
+    /** Smallest date strictly after [reference] that falls on [monthOfYear]/[dayOfMonth]. */
+    fun nextYearlyDateAfter(monthOfYear: Int, dayOfMonth: Int, reference: LocalDate): LocalDate =
+        nextYearlyDateOnOrAfter(monthOfYear, dayOfMonth, reference.plusDays(1))
+
+    fun toEpochMillis(date: LocalDate): Long =
+        date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    fun toLocalDate(millis: Long): LocalDate =
+        java.time.Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
 }

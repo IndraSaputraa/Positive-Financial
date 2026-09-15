@@ -57,6 +57,7 @@ import com.positivefinancial.app.ui.components.TransactionRow
 import com.positivefinancial.app.ui.components.parseHexColor
 import com.positivefinancial.app.ui.theme.ExpenseRed
 import com.positivefinancial.app.ui.theme.IncomeGreen
+import com.positivefinancial.app.ui.theme.WarningAmber
 import com.positivefinancial.app.util.Formatters
 
 @Composable
@@ -65,6 +66,8 @@ fun DashboardScreen(
     onSeeAllTransactions: () -> Unit,
     onTransfer: () -> Unit,
     onOpenAccount: (Long) -> Unit,
+    onManageBudgets: () -> Unit,
+    onManageGoals: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -123,6 +126,26 @@ fun DashboardScreen(
 
         if (state.insights.isNotEmpty()) {
             item { InsightsCard(state.insights) }
+        }
+
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SectionHeader(title = "Budgets", actionLabel = "Manage", onActionClick = onManageBudgets)
+                if (state.budgetAlerts.isEmpty()) {
+                    EmptyState("No budgets set", "Set a monthly limit per category to keep spending in check.")
+                } else {
+                    BudgetAlertsCard(state.budgetAlerts)
+                }
+            }
+        }
+
+        if (state.goals.isNotEmpty()) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SectionHeader(title = "Goals", actionLabel = "Manage", onActionClick = onManageGoals)
+                    GoalsSummaryCard(state.goals)
+                }
+            }
         }
 
         item {
@@ -293,6 +316,99 @@ private fun InsightsCard(insights: List<String>) {
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GoalsSummaryCard(goals: List<GoalSummary>) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            goals.take(4).forEach { goal ->
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconBadge(iconKey = goal.iconKey, colorHex = goal.colorHex, size = 28.dp)
+                            Text(
+                                goal.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                        Text(
+                            "${(goal.progress * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (goal.isCompleted) IncomeGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    LinearProgressIndicator(
+                        progress = { goal.progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = if (goal.isCompleted) IncomeGreen else parseHexColor(goal.colorHex)
+                    )
+                    Text(
+                        "${Formatters.currency(goal.currentAmount)} of ${Formatters.currency(goal.targetAmount)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BudgetAlertsCard(alerts: List<BudgetAlert>) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            alerts.take(4).forEach { alert ->
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconBadge(iconKey = alert.iconKey, colorHex = alert.colorHex, size = 28.dp)
+                            Text(
+                                alert.categoryName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                        Text(
+                            "${Formatters.currency(alert.spent)} / ${Formatters.currency(alert.limit)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (alert.isOverBudget) ExpenseRed else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    LinearProgressIndicator(
+                        progress = { alert.progress.coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = when {
+                            alert.isOverBudget -> ExpenseRed
+                            alert.progress > 0.8f -> WarningAmber
+                            else -> IncomeGreen
+                        }
+                    )
+                }
             }
         }
     }

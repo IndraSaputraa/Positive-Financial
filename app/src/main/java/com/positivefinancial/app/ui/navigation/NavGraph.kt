@@ -30,6 +30,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.positivefinancial.app.ui.accounts.AccountDetailScreen
+import com.positivefinancial.app.ui.budgets.BudgetsScreen
+import com.positivefinancial.app.ui.goals.GoalsScreen
 import com.positivefinancial.app.ui.accounts.AccountsScreen
 import com.positivefinancial.app.ui.accounts.AddEditAccountScreen
 import com.positivefinancial.app.ui.creditcards.AddEditCreditCardScreen
@@ -102,8 +104,18 @@ fun PositiveFinancialApp() {
                     onAddTransaction = { type -> navController.navigate(Screen.AddEditTransaction.create(type = type)) },
                     onSeeAllTransactions = { navController.navigate(Screen.Transactions.route) },
                     onTransfer = { navController.navigate(Screen.Transfer.route) },
-                    onOpenAccount = { id -> navController.navigate(Screen.AccountDetail.create(id)) }
+                    onOpenAccount = { id -> navController.navigate(Screen.AccountDetail.create(id)) },
+                    onManageBudgets = { navController.navigate(Screen.Budgets.route) },
+                    onManageGoals = { navController.navigate(Screen.Goals.route) }
                 )
+            }
+
+            composable(Screen.Budgets.route) {
+                BudgetsScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.Goals.route) {
+                GoalsScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Screen.Transactions.route) {

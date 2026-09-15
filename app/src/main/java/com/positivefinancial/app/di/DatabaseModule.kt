@@ -3,9 +3,13 @@ package com.positivefinancial.app.di
 import android.content.Context
 import androidx.room.Room
 import com.positivefinancial.app.data.local.AppDatabase
+import com.positivefinancial.app.data.local.MIGRATION_1_2
 import com.positivefinancial.app.data.local.dao.AccountDao
+import com.positivefinancial.app.data.local.dao.BudgetDao
 import com.positivefinancial.app.data.local.dao.CategoryDao
 import com.positivefinancial.app.data.local.dao.CreditCardDao
+import com.positivefinancial.app.data.local.dao.GoalDao
+import com.positivefinancial.app.data.local.dao.RecurringItemDao
 import com.positivefinancial.app.data.local.dao.TransactionDao
 import dagger.Module
 import dagger.Provides
@@ -22,6 +26,7 @@ object DatabaseModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.DATABASE_NAME)
+            .addMigrations(MIGRATION_1_2)
             .build()
 
     @Provides
@@ -35,4 +40,13 @@ object DatabaseModule {
 
     @Provides
     fun provideCreditCardDao(database: AppDatabase): CreditCardDao = database.creditCardDao()
+
+    @Provides
+    fun provideBudgetDao(database: AppDatabase): BudgetDao = database.budgetDao()
+
+    @Provides
+    fun provideGoalDao(database: AppDatabase): GoalDao = database.goalDao()
+
+    @Provides
+    fun provideRecurringItemDao(database: AppDatabase): RecurringItemDao = database.recurringItemDao()
 }

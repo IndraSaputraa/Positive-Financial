@@ -32,6 +32,10 @@ sealed class Screen(val route: String) {
 
     object Export : Screen("export")
 
+    object Budgets : Screen("budgets")
+
+    object Goals : Screen("goals")
+
     companion object {
         const val NEW_ID = -1L
     }

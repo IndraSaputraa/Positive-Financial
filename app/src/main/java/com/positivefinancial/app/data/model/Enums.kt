@@ -18,3 +18,13 @@ enum class CategoryType {
     INCOME,
     EXPENSE
 }
+
+enum class GoalType {
+    SAVINGS,
+    DEBT_PAYOFF
+}
+
+enum class RecurringFrequency {
+    MONTHLY,
+    YEARLY
+}

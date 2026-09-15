@@ -14,4 +14,21 @@
 
     <string name="card_reminder_title">Credit card payment reminder</string>
     <string name="card_reminder_body">Your %1$s payment is coming up. Don\'t miss the due date.</string>
+
+    <string name="notification_channel_budget_id">budget_alert_channel</string>
+    <string name="notification_channel_budget_name">Budget Alerts</string>
+    <string name="notification_channel_budget_desc">Lets you know when you go over a category budget</string>
+
+    <string name="budget_exceeded_title">Over budget: %1$s</string>
+    <string name="budget_exceeded_body">You\'ve spent %2$s this month, over your %1$s budget of %3$s.</string>
+
+    <string name="notification_channel_recurring_id">recurring_bills_channel</string>
+    <string name="notification_channel_recurring_name">Recurring &amp; Bills</string>
+    <string name="notification_channel_recurring_desc">Recurring transactions and upcoming bill reminders</string>
+
+    <string name="recurring_created_title">Recurring transaction added</string>
+    <string name="recurring_created_body">Added %1$s: %2$s</string>
+
+    <string name="bill_reminder_title">Upcoming bill: %1$s</string>
+    <string name="bill_reminder_body">%1$s (%2$s) is due soon.</string>
 </resources>

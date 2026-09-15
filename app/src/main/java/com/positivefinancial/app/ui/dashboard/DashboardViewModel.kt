@@ -6,7 +6,11 @@ import com.positivefinancial.app.data.local.dao.CategorySpendingRow
 import com.positivefinancial.app.data.local.dao.MonthlySummaryRow
 import com.positivefinancial.app.data.local.dao.TransactionWithDetails
 import com.positivefinancial.app.data.local.entity.AccountEntity
+import com.positivefinancial.app.data.local.entity.BudgetEntity
+import com.positivefinancial.app.data.model.GoalType
 import com.positivefinancial.app.data.repository.AccountRepository
+import com.positivefinancial.app.data.repository.BudgetRepository
+import com.positivefinancial.app.data.repository.GoalRepository
 import com.positivefinancial.app.data.repository.TransactionRepository
 import com.positivefinancial.app.util.DateRanges
 import com.positivefinancial.app.util.InsightEngine
@@ -23,6 +27,28 @@ import kotlinx.coroutines.flow.stateIn
 import java.time.YearMonth
 import javax.inject.Inject
 
+data class BudgetAlert(
+    val categoryName: String,
+    val iconKey: String,
+    val colorHex: String,
+    val spent: Long,
+    val limit: Long
+) {
+    val progress: Float get() = (spent.toFloat() / limit.toFloat()).coerceIn(0f, 3f)
+    val isOverBudget: Boolean get() = spent > limit
+}
+
+data class GoalSummary(
+    val name: String,
+    val iconKey: String,
+    val colorHex: String,
+    val currentAmount: Long,
+    val targetAmount: Long
+) {
+    val progress: Float get() = if (targetAmount > 0) (currentAmount.toFloat() / targetAmount.toFloat()).coerceIn(0f, 1f) else 0f
+    val isCompleted: Boolean get() = progress >= 1f
+}
+
 data class DashboardUiState(
     val selectedMonth: YearMonth = YearMonth.now(),
     val isCurrentMonth: Boolean = true,
@@ -31,6 +57,8 @@ data class DashboardUiState(
     val monthlyIncome: Long = 0,
     val monthlyExpense: Long = 0,
     val expenseBreakdown: List<CategorySpendingRow> = emptyList(),
+    val budgetAlerts: List<BudgetAlert> = emptyList(),
+    val goals: List<GoalSummary> = emptyList(),
     val recentTransactions: List<TransactionWithDetails> = emptyList(),
     val monthlySummary: List<MonthlySummaryRow> = emptyList(),
     val insights: List<String> = emptyList(),
@@ -48,7 +76,8 @@ private data class MonthTotals(
 private data class MonthData(
     val month: YearMonth,
     val totals: MonthTotals,
-    val recent: List<TransactionWithDetails>
+    val recent: List<TransactionWithDetails>,
+    val budgets: List<BudgetEntity>
 )
 
 private const val RECENT_ACTIVITY_LIMIT = 8
@@ -57,17 +86,36 @@ private const val RECENT_ACTIVITY_LIMIT = 8
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val budgetRepository: BudgetRepository,
+    private val goalRepository: GoalRepository
 ) : ViewModel() {
 
     private val selectedMonth = MutableStateFlow(YearMonth.now())
 
     private val monthlySummary = transactionRepository.observeMonthlySummary(DateRanges.monthsAgoStart(6))
 
+    private val goalsFlow = combine(
+        goalRepository.observeActive(),
+        accountRepository.observeAccounts()
+    ) { goals, accounts ->
+        val accountsById = accounts.associateBy { it.id }
+        goals.mapNotNull { goal ->
+            val account = accountsById[goal.linkedAccountId] ?: return@mapNotNull null
+            val outstanding = if (account.balance < 0) -account.balance else 0
+            val current = when (goal.goalType) {
+                GoalType.SAVINGS -> account.balance.coerceAtLeast(0)
+                GoalType.DEBT_PAYOFF -> (goal.targetAmount - outstanding).coerceIn(0, goal.targetAmount)
+            }
+            GoalSummary(goal.name, goal.iconKey, goal.colorHex, current, goal.targetAmount)
+        }
+    }
+
     val uiState: StateFlow<DashboardUiState> = combine(
         selectedMonth.flatMapLatest { month -> monthScopedData(month) },
-        monthlySummary
-    ) { monthData, monthly ->
+        monthlySummary,
+        goalsFlow
+    ) { monthData, monthly, goals ->
         val topCategory = monthData.totals.breakdown.firstOrNull { it.total > 0 }
         DashboardUiState(
             selectedMonth = monthData.month,
@@ -77,6 +125,8 @@ class DashboardViewModel @Inject constructor(
             monthlyIncome = monthData.totals.income,
             monthlyExpense = monthData.totals.expense,
             expenseBreakdown = monthData.totals.breakdown,
+            budgetAlerts = budgetAlertsFrom(monthData.totals.breakdown, monthData.budgets),
+            goals = goals,
             recentTransactions = monthData.recent,
             monthlySummary = monthly,
             insights = InsightEngine.generate(
@@ -105,7 +155,24 @@ class DashboardViewModel @Inject constructor(
         val recent = transactionRepository.observeFiltered(startDate = start, endDate = end)
             .map { it.take(RECENT_ACTIVITY_LIMIT) }
 
-        return combine(totals, recent) { t, r -> MonthData(month, t, r) }
+        return combine(totals, recent, budgetRepository.observeAll()) { t, r, budgets ->
+            MonthData(month, t, r, budgets)
+        }
+    }
+
+    private fun budgetAlertsFrom(breakdown: List<CategorySpendingRow>, budgets: List<BudgetEntity>): List<BudgetAlert> {
+        val budgetsByCategory = budgets.associateBy { it.categoryId }
+        return breakdown.mapNotNull { row ->
+            val categoryId = row.categoryId ?: return@mapNotNull null
+            val budget = budgetsByCategory[categoryId] ?: return@mapNotNull null
+            BudgetAlert(
+                categoryName = row.categoryName ?: "Uncategorized",
+                iconKey = row.iconKey ?: "category",
+                colorHex = row.colorHex ?: "#94A3B8",
+                spent = row.total,
+                limit = budget.monthlyLimit
+            )
+        }.sortedByDescending { it.progress }
     }
 
     fun onPreviousMonth() {
