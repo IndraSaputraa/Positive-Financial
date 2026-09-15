@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.verticalScroll
@@ -47,6 +48,7 @@ import com.positivefinancial.app.data.model.TransactionType
 import com.positivefinancial.app.ui.components.AppDatePickerDialog
 import com.positivefinancial.app.ui.components.ConfirmDialog
 import com.positivefinancial.app.ui.components.IconBadge
+import com.positivefinancial.app.ui.components.ThousandsSeparatorVisualTransformation
 import com.positivefinancial.app.util.Formatters
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -91,6 +93,7 @@ fun AddEditTransactionScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -119,24 +122,16 @@ fun AddEditTransactionScreen(
                 }
             }
 
-            Column {
-                OutlinedTextField(
-                    value = state.amountText,
-                    onValueChange = viewModel::onAmountChange,
-                    label = { Text("Amount (IDR)") },
-                    prefix = { Text("Rp ") },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                if (state.amount > 0) {
-                    Text(
-                        text = Formatters.currency(state.amount),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp, start = 4.dp)
-                    )
-                }
-            }
+            OutlinedTextField(
+                value = state.amountText,
+                onValueChange = viewModel::onAmountChange,
+                label = { Text("Amount (IDR)") },
+                prefix = { Text("Rp ") },
+                visualTransformation = ThousandsSeparatorVisualTransformation(),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Account", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)

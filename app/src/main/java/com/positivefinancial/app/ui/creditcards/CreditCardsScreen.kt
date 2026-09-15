@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.positivefinancial.app.ui.components.EmptyState
 import com.positivefinancial.app.ui.components.IconBadge
+import com.positivefinancial.app.ui.components.RefreshableScreen
 import com.positivefinancial.app.ui.theme.ExpenseRed
 import com.positivefinancial.app.ui.theme.IncomeGreen
 import com.positivefinancial.app.util.DateRanges
@@ -55,8 +56,9 @@ fun CreditCardsScreen(
             }
         }
     ) { padding ->
+        RefreshableScreen(modifier = Modifier.fillMaxSize().padding(padding)) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -132,6 +134,7 @@ fun CreditCardsScreen(
                     }
                 }
             }
+        }
         }
     }
 }

@@ -7,9 +7,12 @@ import com.positivefinancial.app.data.local.dao.MonthlySummaryRow
 import com.positivefinancial.app.data.local.dao.TransactionWithDetails
 import com.positivefinancial.app.data.local.entity.AccountEntity
 import com.positivefinancial.app.data.local.entity.BudgetEntity
+import com.positivefinancial.app.data.local.entity.CategoryEntity
+import com.positivefinancial.app.data.model.CategoryType
 import com.positivefinancial.app.data.model.GoalType
 import com.positivefinancial.app.data.repository.AccountRepository
 import com.positivefinancial.app.data.repository.BudgetRepository
+import com.positivefinancial.app.data.repository.CategoryRepository
 import com.positivefinancial.app.data.repository.GoalRepository
 import com.positivefinancial.app.data.repository.TransactionRepository
 import com.positivefinancial.app.util.DateRanges
@@ -88,12 +91,14 @@ class DashboardViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val budgetRepository: BudgetRepository,
-    private val goalRepository: GoalRepository
+    private val goalRepository: GoalRepository,
+    categoryRepository: CategoryRepository
 ) : ViewModel() {
 
     private val selectedMonth = MutableStateFlow(YearMonth.now())
 
     private val monthlySummary = transactionRepository.observeMonthlySummary(DateRanges.monthsAgoStart(6))
+    private val expenseCategories = categoryRepository.observeByType(CategoryType.EXPENSE)
 
     private val goalsFlow = combine(
         goalRepository.observeActive(),
@@ -114,8 +119,9 @@ class DashboardViewModel @Inject constructor(
     val uiState: StateFlow<DashboardUiState> = combine(
         selectedMonth.flatMapLatest { month -> monthScopedData(month) },
         monthlySummary,
-        goalsFlow
-    ) { monthData, monthly, goals ->
+        goalsFlow,
+        expenseCategories
+    ) { monthData, monthly, goals, categories ->
         val topCategory = monthData.totals.breakdown.firstOrNull { it.total > 0 }
         DashboardUiState(
             selectedMonth = monthData.month,
@@ -125,7 +131,7 @@ class DashboardViewModel @Inject constructor(
             monthlyIncome = monthData.totals.income,
             monthlyExpense = monthData.totals.expense,
             expenseBreakdown = monthData.totals.breakdown,
-            budgetAlerts = budgetAlertsFrom(monthData.totals.breakdown, monthData.budgets),
+            budgetAlerts = budgetAlertsFrom(monthData.totals.breakdown, monthData.budgets, categories),
             goals = goals,
             recentTransactions = monthData.recent,
             monthlySummary = monthly,
@@ -160,16 +166,20 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private fun budgetAlertsFrom(breakdown: List<CategorySpendingRow>, budgets: List<BudgetEntity>): List<BudgetAlert> {
-        val budgetsByCategory = budgets.associateBy { it.categoryId }
-        return breakdown.mapNotNull { row ->
-            val categoryId = row.categoryId ?: return@mapNotNull null
-            val budget = budgetsByCategory[categoryId] ?: return@mapNotNull null
+    private fun budgetAlertsFrom(
+        breakdown: List<CategorySpendingRow>,
+        budgets: List<BudgetEntity>,
+        categories: List<CategoryEntity>
+    ): List<BudgetAlert> {
+        val spentByCategory = breakdown.mapNotNull { row -> row.categoryId?.let { it to row.total } }.toMap()
+        val categoriesById = categories.associateBy { it.id }
+        return budgets.mapNotNull { budget ->
+            val category = categoriesById[budget.categoryId] ?: return@mapNotNull null
             BudgetAlert(
-                categoryName = row.categoryName ?: "Uncategorized",
-                iconKey = row.iconKey ?: "category",
-                colorHex = row.colorHex ?: "#94A3B8",
-                spent = row.total,
+                categoryName = category.name,
+                iconKey = category.iconKey,
+                colorHex = category.colorHex,
+                spent = spentByCategory[budget.categoryId] ?: 0L,
                 limit = budget.monthlyLimit
             )
         }.sortedByDescending { it.progress }

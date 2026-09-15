@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -44,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.positivefinancial.app.ui.components.AppDatePickerDialog
 import com.positivefinancial.app.ui.components.EmptyState
 import com.positivefinancial.app.ui.components.IconBadge
+import com.positivefinancial.app.ui.components.ThousandsSeparatorVisualTransformation
 import com.positivefinancial.app.util.Formatters
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -80,6 +82,7 @@ fun TransferScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -127,24 +130,16 @@ fun TransferScreen(
                 }
             }
 
-            Column {
-                OutlinedTextField(
-                    value = state.amountText,
-                    onValueChange = viewModel::onAmountChange,
-                    label = { Text("Amount (IDR)") },
-                    prefix = { Text("Rp ") },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                if (state.amount > 0) {
-                    Text(
-                        text = Formatters.currency(state.amount),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 4.dp, start = 4.dp)
-                    )
-                }
-            }
+            OutlinedTextField(
+                value = state.amountText,
+                onValueChange = viewModel::onAmountChange,
+                label = { Text("Amount (IDR)") },
+                prefix = { Text("Rp ") },
+                visualTransformation = ThousandsSeparatorVisualTransformation(),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
 
             OutlinedTextField(
                 value = state.note,

@@ -52,6 +52,7 @@ import com.positivefinancial.app.ui.components.IconBadge
 import com.positivefinancial.app.ui.components.MonthlyBarChart
 import com.positivefinancial.app.ui.components.MonthlyBarData
 import com.positivefinancial.app.ui.components.MonthSelector
+import com.positivefinancial.app.ui.components.RefreshableScreen
 import com.positivefinancial.app.ui.components.SectionHeader
 import com.positivefinancial.app.ui.components.TransactionRow
 import com.positivefinancial.app.ui.components.parseHexColor
@@ -72,6 +73,7 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    RefreshableScreen(modifier = Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -217,6 +219,7 @@ fun DashboardScreen(
                 HorizontalDivider()
             }
         }
+    }
     }
 }
 

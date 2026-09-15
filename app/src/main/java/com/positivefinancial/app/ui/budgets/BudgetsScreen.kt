@@ -158,6 +158,7 @@ private fun SetBudgetDialog(
                 onValueChange = { limitText = it.filter { c -> c.isDigit() }.take(15) },
                 label = { Text("Monthly limit (IDR)") },
                 prefix = { Text("Rp ") },
+                visualTransformation = com.positivefinancial.app.ui.components.ThousandsSeparatorVisualTransformation(),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true
             )

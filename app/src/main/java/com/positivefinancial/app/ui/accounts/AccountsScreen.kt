@@ -31,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.positivefinancial.app.ui.components.EmptyState
 import com.positivefinancial.app.ui.components.IconBadge
+import com.positivefinancial.app.ui.components.RefreshableScreen
 import com.positivefinancial.app.util.Formatters
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,8 +52,9 @@ fun AccountsScreen(
             }
         }
     ) { padding ->
+        RefreshableScreen(modifier = Modifier.fillMaxSize().padding(padding)) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -109,6 +111,7 @@ fun AccountsScreen(
                     }
                 }
             }
+        }
         }
     }
 }

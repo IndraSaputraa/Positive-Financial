@@ -38,6 +38,7 @@ import com.positivefinancial.app.data.local.dao.TransactionWithDetails
 import com.positivefinancial.app.data.model.TransactionType
 import com.positivefinancial.app.ui.components.EmptyState
 import com.positivefinancial.app.ui.components.MonthSelector
+import com.positivefinancial.app.ui.components.RefreshableScreen
 import com.positivefinancial.app.ui.components.TransactionRow
 import com.positivefinancial.app.util.Formatters
 import java.time.YearMonth
@@ -127,29 +128,31 @@ fun TransactionListScreen(
             if (state.transactions.isEmpty() && !state.isLoading) {
                 EmptyState("No transactions found", "Try a different search or filter, or add a new transaction.")
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    grouped.forEach { (day, transactions) ->
-                        item(key = "header_$day") {
-                            Text(
-                                text = day,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        }
-                        items(transactions, key = { it.id }) { tx ->
-                            TransactionRow(
-                                transaction = tx,
-                                onClick = {
-                                    if (tx.type == TransactionType.TRANSFER) transferToView = tx
-                                    else onTransactionClick(tx.id)
-                                }
-                            )
-                            HorizontalDivider()
+                RefreshableScreen(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        grouped.forEach { (day, transactions) ->
+                            item(key = "header_$day") {
+                                Text(
+                                    text = day,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                            items(transactions, key = { it.id }) { tx ->
+                                TransactionRow(
+                                    transaction = tx,
+                                    onClick = {
+                                        if (tx.type == TransactionType.TRANSFER) transferToView = tx
+                                        else onTransactionClick(tx.id)
+                                    }
+                                )
+                                HorizontalDivider()
+                            }
                         }
                     }
                 }

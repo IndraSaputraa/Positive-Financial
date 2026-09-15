@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.verticalScroll
@@ -52,6 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.positivefinancial.app.ui.accounts.AccountColorPalette
 import com.positivefinancial.app.ui.components.AppTimePickerDialog
+import com.positivefinancial.app.ui.components.ThousandsSeparatorVisualTransformation
 import com.positivefinancial.app.ui.components.parseHexColor
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -81,6 +83,7 @@ fun AddEditCreditCardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -120,6 +123,7 @@ fun AddEditCreditCardScreen(
                 onValueChange = viewModel::onCreditLimitChange,
                 label = { Text("Credit limit (IDR)") },
                 prefix = { Text("Rp ") },
+                visualTransformation = ThousandsSeparatorVisualTransformation(),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -131,6 +135,7 @@ fun AddEditCreditCardScreen(
                     onValueChange = viewModel::onOutstandingChange,
                     label = { Text("Current outstanding balance (if any)") },
                     prefix = { Text("Rp ") },
+                    visualTransformation = ThousandsSeparatorVisualTransformation(),
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true

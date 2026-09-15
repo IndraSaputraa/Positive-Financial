@@ -263,6 +263,7 @@ private fun RecordPaymentDialog(
                         onValueChange = { amountText = it.filter { c -> c.isDigit() }.take(15) },
                         label = { Text("Amount (IDR)") },
                         prefix = { Text("Rp ") },
+                        visualTransformation = com.positivefinancial.app.ui.components.ThousandsSeparatorVisualTransformation(),
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true
                     )

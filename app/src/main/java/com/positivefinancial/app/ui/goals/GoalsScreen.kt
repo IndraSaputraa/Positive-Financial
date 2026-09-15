@@ -294,6 +294,7 @@ private fun AddGoalDialog(
                     onValueChange = { targetAmountText = it.filter { c -> c.isDigit() }.take(15) },
                     label = { Text(if (goalType == GoalType.SAVINGS) "Target amount (IDR)" else "Starting debt (IDR)") },
                     prefix = { Text("Rp ") },
+                    visualTransformation = com.positivefinancial.app.ui.components.ThousandsSeparatorVisualTransformation(),
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
