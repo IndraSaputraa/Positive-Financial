@@ -30,6 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.positivefinancial.app.ui.accounts.AccountDetailScreen
+import com.positivefinancial.app.ui.backup.BackupScreen
 import com.positivefinancial.app.ui.budgets.BudgetsScreen
 import com.positivefinancial.app.ui.goals.GoalsScreen
 import com.positivefinancial.app.ui.accounts.AccountsScreen
@@ -145,12 +146,17 @@ fun PositiveFinancialApp() {
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onExportClick = { navController.navigate(Screen.Export.route) },
-                    onRecurringClick = { navController.navigate(Screen.Recurring.route) }
+                    onRecurringClick = { navController.navigate(Screen.Recurring.route) },
+                    onBackupClick = { navController.navigate(Screen.Backup.route) }
                 )
             }
 
             composable(Screen.Export.route) {
                 ExportScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.Backup.route) {
+                BackupScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Screen.Recurring.route) {

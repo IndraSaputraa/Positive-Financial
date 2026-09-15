@@ -1,6 +1,7 @@
 package com.positivefinancial.app
 
 import android.app.Application
+import com.positivefinancial.app.data.backup.BackupManager
 import com.positivefinancial.app.data.local.DefaultData
 import com.positivefinancial.app.data.repository.AccountRepository
 import com.positivefinancial.app.data.repository.CategoryRepository
@@ -25,11 +26,16 @@ class PositiveFinancialApp : Application() {
     @Inject lateinit var accountRepository: AccountRepository
     @Inject lateinit var categoryRepository: CategoryRepository
     @Inject lateinit var recurringItemProcessor: RecurringItemProcessor
+    @Inject lateinit var backupManager: BackupManager
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
+        // Must happen before anything below touches the database: this swaps the
+        // raw .db file on disk in place, before Room's first query opens it.
+        backupManager.applyPendingRestoreIfNeeded()
+
         notificationHelper.createChannels()
 
         applicationScope.launch {
